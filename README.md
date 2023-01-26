@@ -1,15 +1,10 @@
 # Terraform
 
+各環境のコンテナ内に入る
 ```
-$ docker compose run --rm terraform init
-```
-
-### plan
-```
-$ docker compose run --rm terraform plan
+$ docker compose run --rm production
 ```
 
-### apply
 ```
-$ docker compose run --rm terraform apply
+$ terraform plan
 ```

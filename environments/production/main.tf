@@ -1,102 +1,44 @@
-terraform {
-  required_version = "~> 1.0"
-
-  required_providers {
-    aws = {
-      version = "~> 4.51.0"
-    }
-  }
-}
-
-provider "aws" {
-  region     = var.aws_region
-  access_key = var.aws_access_key
-  secret_key = var.aws_secret_key
-}
-
-########
-# S3
-########
-
-resource "aws_s3_bucket_public_access_block" "private" {
-  bucket                  = aws_s3_bucket.alb_log.id
-  block_public_acls       = true
-  block_public_policy     = true
-  ignore_public_acls      = true
-  restrict_public_buckets = true
-}
-
-resource "aws_s3_bucket" "alb_log" {
-  bucket        = var.alb_log_s3_bucket_name
-  force_destroy = true
-  lifecycle_rule {
-    enabled = true
-    expiration {
-      days = "180"
-    }
-  }
-  server_side_encryption_configuration {
-    rule {
-      apply_server_side_encryption_by_default {
-        sse_algorithm = "AES256"
-      }
-    }
-  }
-}
-
-resource "aws_s3_bucket_policy" "alb_log" {
-  bucket = aws_s3_bucket.alb_log.id
-  policy = data.aws_iam_policy_document.alb_log.json
-}
-
-data "aws_iam_policy_document" "alb_log" {
-  statement {
-    effect    = "Allow"
-    actions   = ["s3:PutObject"]
-    resources = ["arn:aws:s3:::${aws_s3_bucket.alb_log.id}/*"]
-    principals {
-      type = "AWS"
-
-      identifiers = [var.aws_account_id]
-    }
-  }
-}
-
 ########
 # VPC
 ########
 
-resource "aws_vpc" "main" {
-  cidr_block           = var.vpc_cidr
-  enable_dns_support   = true
-  enable_dns_hostnames = true
-  tags = {
-    Name = var.service_tag_name
-  }
+module "vpc" {
+  source           = "../../modules/vpc"
+  vpc_cidr         = var.vpc_cidr
+  service_tag_name = var.service_tag_name
 }
 
-## Public
+module "s3_alb_log" {
+  source      = "../../modules/s3/alb_log"
+  bucket_name = var.alb_log_s3_bucket_name
+  aws_account_id = var.aws_account_id
+  force_destroy             = var.force_destroy
+  lifecycle_enabled         = var.lifecycle_enabled
+  lifecycle_expiration_days = var.lifecycle_expiration_days
+}
+
+## Public Network
 
 resource "aws_subnet" "public_a" {
-  vpc_id                  = aws_vpc.main.id
+  vpc_id                  = module.vpc.id
   cidr_block              = var.subnet_public_a_cidr
   map_public_ip_on_launch = true
   availability_zone       = "ap-northeast-1a"
 }
 
 resource "aws_subnet" "public_c" {
-  vpc_id                  = aws_vpc.main.id
+  vpc_id                  = module.vpc.id
   cidr_block              = var.subnet_public_c_cidr
   map_public_ip_on_launch = true
   availability_zone       = "ap-northeast-1c"
 }
 
 resource "aws_internet_gateway" "main" {
-  vpc_id = aws_vpc.main.id
+  vpc_id = module.vpc.id
 }
 
 resource "aws_route_table" "public" {
-  vpc_id = aws_vpc.main.id
+  vpc_id = module.vpc.id
 }
 
 resource "aws_route" "public" {
@@ -115,28 +57,28 @@ resource "aws_route_table_association" "public_c" {
   route_table_id = aws_route_table.public.id
 }
 
-## Private
+## Private Network
 
 resource "aws_subnet" "private_a" {
-  vpc_id                  = aws_vpc.main.id
+  vpc_id                  = module.vpc.id
   cidr_block              = var.subnet_private_a_cidr
   availability_zone       = "ap-northeast-1a"
   map_public_ip_on_launch = false
 }
 
 resource "aws_subnet" "private_c" {
-  vpc_id                  = aws_vpc.main.id
+  vpc_id                  = module.vpc.id
   cidr_block              = var.subnet_private_c_cidr
   availability_zone       = "ap-northeast-1c"
   map_public_ip_on_launch = false
 }
 
 resource "aws_route_table" "private_a" {
-  vpc_id = aws_vpc.main.id
+  vpc_id = module.vpc.id
 }
 
 resource "aws_route_table" "private_c" {
-  vpc_id = aws_vpc.main.id
+  vpc_id = module.vpc.id
 }
 
 resource "aws_route" "private_a" {
@@ -184,9 +126,9 @@ resource "aws_nat_gateway" "main_c" {
 }
 
 module "default_sg" {
-  source              = "./security_group"
+  source              = "../../modules/security_group"
   name                = "default_sg"
-  vpc_id              = aws_vpc.main.id
+  vpc_id              = module.vpc.id
   port                = 80
   ingress_cidr_blocks = var.access_ingress_cidr
 }
