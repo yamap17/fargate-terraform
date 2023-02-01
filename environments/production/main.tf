@@ -125,10 +125,27 @@ resource "aws_nat_gateway" "main_c" {
   depends_on    = [aws_internet_gateway.main]
 }
 
-module "default_sg" {
+module "http_sg" {
   source              = "../../modules/security_group"
-  name                = "default_sg"
+  name                = "http-sg"
   vpc_id              = module.vpc.id
   port                = 80
   ingress_cidr_blocks = var.access_ingress_cidr
 }
+
+module "https_sg" {
+  source              = "../../modules/security_group"
+  name                = "https-sg"
+  vpc_id              = module.vpc.id
+  port                = 443
+  ingress_cidr_blocks = var.access_ingress_cidr
+}
+
+module "http_redirect_sg" {
+  source              = "../../modules/security_group"
+  name                = "http-redirect-sg"
+  vpc_id              = module.vpc.id
+  port                = 8080
+  ingress_cidr_blocks = var.access_ingress_cidr
+}
+
