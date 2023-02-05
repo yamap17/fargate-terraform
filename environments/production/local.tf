@@ -34,3 +34,7 @@ variable "subnet_private_a_cidr" {}
 variable "subnet_private_c_cidr" {}
 variable "access_ingress_cidr" {}
 variable "service_tag_name" {}
+variable "hostzone_name" {}
+variable "alb_name" {}
+variable "target_group_name" {}
+variable "healthcheck_path" {}

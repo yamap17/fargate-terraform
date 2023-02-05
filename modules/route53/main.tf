@@ -3,7 +3,7 @@ data "aws_route53_zone" "main" {
 }
 
 resource "aws_route53_zone" "main" {
-  name = var.name
+  name = var.hostzone_name
 }
 
 resource "aws_route53_record" "main" {

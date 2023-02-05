@@ -1,1 +1,1 @@
-variable "name" {}
+variable "hostzone_name" {}

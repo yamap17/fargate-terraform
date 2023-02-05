@@ -13,7 +13,7 @@ resource "aws_s3_bucket_public_access_block" "private" {
 }
 
 resource "aws_s3_bucket_lifecycle_configuration" "main" {
-  bucket = aws_s3_bucket.main.bucket
+  bucket = module.s3_bucket.id
 
   rule {
     id = "alb_log"
