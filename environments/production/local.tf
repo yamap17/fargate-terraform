@@ -33,6 +33,7 @@ variable "subnet_public_c_cidr" {}
 variable "subnet_private_a_cidr" {}
 variable "subnet_private_c_cidr" {}
 variable "access_ingress_cidr" {}
+variable "service_name" {}
 variable "service_tag_name" {}
 variable "hostzone_name" {}
 variable "alb_name" {}

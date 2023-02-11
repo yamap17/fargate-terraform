@@ -36,7 +36,6 @@ data "aws_iam_policy_document" "alb_log" {
     resources = ["arn:aws:s3:::${module.s3_bucket.id}/*"]
     principals {
       type = "AWS"
-
       identifiers = [var.aws_account_id]
     }
   }
